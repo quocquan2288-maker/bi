@@ -1,1 +1,626 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunwin Dự Đoán</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+        
+        body {
+            background: #000;
+            color: #0f0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #0f0;
+            background: rgba(0, 30, 0, 0.3);
+            position: relative;
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #0a0;
+            font-size: 1rem;
+        }
+        
+        /* Main layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            border: 1px solid #0f0;
+            padding: 20px;
+            background: rgba(0, 20, 0, 0.2);
+        }
+        
+        .panel-title {
+            color: #0f0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #0a0;
+            font-size: 1.3rem;
+        }
+        
+        /* Dice input */
+        .dice-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .dice-box {
+            width: 70px;
+            height: 70px;
+            border: 2px solid #0f0;
+            background: #001100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #0f0;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .dice-box.active {
+            border-color: #fff;
+            box-shadow: 0 0 15px #0f0;
+            background: #002200;
+        }
+        
+        /* Number pad */
+        .number-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .num-btn {
+            height: 50px;
+            border: 1px solid #0a0;
+            background: #001100;
+            color: #0f0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .num-btn:hover {
+            background: #002200;
+            border-color: #0f0;
+        }
+        
+        /* Control buttons */
+        .control-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .ctrl-btn {
+            padding: 12px;
+            border: 1px solid #0f0;
+            background: #002200;
+            color: #0f0;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .ctrl-btn.predict {
+            background: #003300;
+            font-weight: bold;
+        }
+        
+        /* Prediction result */
+        .prediction-box {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #0f0;
+            background: rgba(0, 20, 0, 0.3);
+            min-height: 200px;
+        }
+        
+        .result-title {
+            color: #0a0;
+            margin-bottom: 15px;
+        }
+        
+        .result-value {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .tai {
+            color: #0f0;
+            text-shadow: 0 0 20px #0f0;
+        }
+        
+        .xiu {
+            color: #f00;
+            text-shadow: 0 0 20px #f00;
+        }
+        
+        .result-detail {
+            color: #0a0;
+            font-size: 0.9rem;
+        }
+        
+        /* Simple processing animation */
+        .processing {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin: 15px 0;
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #0f0;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+        
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+        
+        /* Terminal */
+        .terminal {
+            height: 200px;
+            border: 1px solid #0a0;
+            background: #001100;
+            padding: 15px;
+            font-family: monospace;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            margin-top: 30px;
+        }
+        
+        .terminal-line {
+            margin-bottom: 3px;
+        }
+        
+        .prompt {
+            color: #0f0;
+        }
+        
+        .command {
+            color: #fff;
+        }
+        
+        .response {
+            color: #0af;
+        }
+        
+        /* History */
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .history-item {
+            border: 1px solid #0a0;
+            padding: 10px;
+            background: rgba(0, 30, 0, 0.2);
+        }
+        
+        .history-dice {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+        
+        .history-dice span {
+            width: 25px;
+            height: 25px;
+            background: #001100;
+            border: 1px solid #0a0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .history-result {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        
+        .history-tai { color: #0f0; }
+        .history-xiu { color: #f00; }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #0a0;
+            color: #0a0;
+            font-size: 0.8rem;
+        }
+        
+        /* Simple scanline effect */
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: #0f0;
+            opacity: 0.1;
+            animation: scan 3s linear infinite;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100vh; }
+        }
+        
+        /* Simple glitch effect on title */
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-1px, 1px); }
+            40% { transform: translate(-1px, -1px); }
+            60% { transform: translate(1px, 1px); }
+            80% { transform: translate(1px, -1px); }
+            100% { transform: translate(0); }
+        }
+        
+        .glitch {
+            animation: glitch 0.5s infinite;
+            animation-play-state: paused;
+        }
+        
+        .glitch:hover {
+            animation-play-state: running;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanline"></div>
+    
+    <div class="container">
+        <header class="header">
+            <h1 class="title glitch">SUNWIN DỰ ĐOÁN</h1>
+            <div class="subtitle">Công thức Chataone • Phiên bản tối ưu</div>
+        </header>
+        
+        <div class="main-grid">
+            <!-- Input Panel -->
+            <div class="panel">
+                <h2 class="panel-title">NHẬP XÚC XẮC</h2>
+                
+                <div class="dice-container">
+                    <div class="dice-box active" data-index="0">?</div>
+                    <div class="dice-box" data-index="1">?</div>
+                    <div class="dice-box" data-index="2">?</div>
+                </div>
+                
+                <div class="number-pad">
+                    <button class="num-btn" data-value="1">1</button>
+                    <button class="num-btn" data-value="2">2</button>
+                    <button class="num-btn" data-value="3">3</button>
+                    <button class="num-btn" data-value="4">4</button>
+                    <button class="num-btn" data-value="5">5</button>
+                    <button class="num-btn" data-value="6">6</button>
+                    <button class="num-btn" data-value="clear">⌫</button>
+                    <button class="num-btn" data-value="random">🎲</button>
+                    <button class="num-btn" data-value="auto">⚡</button>
+                </div>
+                
+                <div class="control-buttons">
+                    <button class="ctrl-btn predict" id="predictBtn">DỰ ĐOÁN</button>
+                    <button class="ctrl-btn" id="resetBtn">LÀM LẠI</button>
+                </div>
+            </div>
+            
+            <!-- Result Panel -->
+            <div class="panel">
+                <h2 class="panel-title">KẾT QUẢ</h2>
+                
+                <div class="prediction-box" id="predictionBox">
+                    <div class="result-title">KẾT QUẢ DỰ ĐOÁN</div>
+                    <div class="result-value" id="resultValue">--</div>
+                    <div class="result-detail" id="resultDetail">
+                        Nhập 3 số xúc xắc và bấm DỰ ĐOÁN
+                    </div>
+                </div>
+                
+                <div>
+                    <h2 class="panel-title">LỊCH SỬ</h2>
+                    <div class="history-grid" id="historyGrid">
+                        <div class="history-item" style="grid-column: 1 / -1; text-align: center; color: #0a0;">
+                            Chưa có lịch sử
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="terminal" id="terminal">
+            <div class="terminal-line">
+                <span class="prompt">$</span> <span class="command">khởi động hệ thống dự đoán...</span>
+            </div>
+            <div class="terminal-line response">
+                > Hệ thống Sunwin Chataone đã sẵn sàng
+            </div>
+            <div class="terminal-line response">
+                > Đã tải 46 mẫu dự đoán
+            </div>
+        </div>
+        
+        <footer class="footer">
+            <div>Công cụ dự đoán xúc xắc • Sunwin Chataone Formula</div>
+            <div>Phiên bản tối ưu hiệu năng • Không lag • Không giật</div>
+        </footer>
+    </div>
 
+    <script>
+        // Cơ sở dữ liệu dự đoán - đơn giản hóa
+        const PREDICTION_DB = {
+            "1 1 1": "xiu", "2 1 1": "xiu", "1 2 2": "xiu",
+            "2 1 2": "tai", "3 1 1": "xiu", "1 2 3": "tai",
+            "3 2 2": "tai", "5 1 1": "xiu", "4 2 1": "tai",
+            "3 3 2": "xiu", "5 2 1": "tai", "4 3 1": "xiu",
+            "6 1 1": "tai", "6 2 1": "tai", "5 3 1": "xiu",
+            "5 2 2": "xiu", "4 3 2": "xiu", "4 1 4": "tai",
+            "3 3 3": "tai", "6 3 1": "tai", "6 2 2": "xiu",
+            "5 4 1": "tai", "5 3 2": "tai", "4 3 3": "xiu",
+            "4 2 4": "tai", "6 3 2": "xiu", "5 5 1": "tai",
+            "5 4 2": "xiu", "5 3 3": "xiu", "4 3 4": "tai",
+            "6 5 1": "tai", "6 4 2": "tai", "6 3 3": "tai",
+            "5 5 2": "xiu", "5 4 3": "xiu", "6 6 1": "xiu",
+            "6 5 2": "tai", "6 4 3": "tai", "5 4 4": "xiu",
+            "6 5 3": "tai", "5 5 4": "xiu", "6 6 3": "tai",
+            "6 5 4": "tai", "5 5 5": "xiu", "6 6 4": "tai",
+            "6 5 5": "xiu", "6 6 5": "tai", "6 6 6": "tai",
+            "6 6 2": "tai", "6 4 1": "tai"
+        };
+
+        // Biến trạng thái
+        let dice = [null, null, null];
+        let activeIndex = 0;
+        let history = [];
+
+        // DOM elements
+        const diceBoxes = document.querySelectorAll('.dice-box');
+        const resultValue = document.getElementById('resultValue');
+        const resultDetail = document.getElementById('resultDetail');
+        const predictionBox = document.getElementById('predictionBox');
+        const terminal = document.getElementById('terminal');
+        const historyGrid = document.getElementById('historyGrid');
+
+        // Khởi tạo
+        document.addEventListener('DOMContentLoaded', () => {
+            // Gán sự kiện cho ô xúc xắc
+            diceBoxes.forEach(box => {
+                box.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.dataset.index);
+                    setActiveDice(index);
+                });
+            });
+            
+            // Gán sự kiện cho bảng số
+            document.querySelectorAll('.num-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const value = e.target.dataset.value;
+                    handleNumberInput(value);
+                });
+            });
+            
+            // Gán sự kiện cho nút điều khiển
+            document.getElementById('predictBtn').addEventListener('click', predict);
+            document.getElementById('resetBtn').addEventListener('click', reset);
+            
+            // Gán phím tắt
+            document.addEventListener('keydown', handleKeyPress);
+            
+            // Tải lịch sử
+            loadHistory();
+        });
+
+        // Đặt ô xúc xắc active
+        function setActiveDice(index) {
+            diceBoxes.forEach(box => box.classList.remove('active'));
+            diceBoxes[index].classList.add('active');
+            activeIndex = index;
+        }
+
+        // Xử lý nhập số
+        function handleNumberInput(value) {
+            switch(value) {
+                case 'clear':
+                    dice[activeIndex] = null;
+                    diceBoxes[activeIndex].textContent = '?';
+                    break;
+                    
+                case 'random':
+                    const randomVal = Math.floor(Math.random() * 6) + 1;
+                    dice[activeIndex] = randomVal;
+                    diceBoxes[activeIndex].textContent = randomVal;
+                    if (activeIndex < 2) setActiveDice(activeIndex + 1);
+                    break;
+                    
+                case 'auto':
+                    for (let i = 0; i < 3; i++) {
+                        dice[i] = Math.floor(Math.random() * 6) + 1;
+                        diceBoxes[i].textContent = dice[i];
+                    }
+                    setActiveDice(0);
+                    break;
+                    
+                default:
+                    dice[activeIndex] = parseInt(value);
+                    diceBoxes[activeIndex].textContent = value;
+                    if (activeIndex < 2) setActiveDice(activeIndex + 1);
+                    break;
+            }
+        }
+
+        // Dự đoán
+        function predict() {
+            // Kiểm tra dữ liệu
+            if (dice.includes(null)) {
+                addTerminalLine("Lỗi: Chưa nhập đủ 3 số xúc xắc", "error");
+                return;
+            }
+            
+            // Hiển thị đang xử lý
+            resultValue.innerHTML = '<div class="processing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+            resultDetail.textContent = 'Đang phân tích mẫu...';
+            
+            // Thông báo terminal
+            addTerminalLine(`Phân tích: [${dice.join(', ')}]`);
+            
+            // Delay nhỏ để hiệu ứng
+            setTimeout(() => {
+                // Tính toán
+                const sorted = [...dice].sort((a, b) => a - b);
+                const key = sorted.join(' ');
+                const sum = dice.reduce((a, b) => a + b, 0);
+                
+                let result, detail;
+                
+                if (PREDICTION_DB[key]) {
+                    result = PREDICTION_DB[key];
+                    detail = `Mẫu: ${key} • Tổng: ${sum} • ${result === 'tai' ? 'TÀI' : 'XỈU'}`;
+                } else {
+                    result = sum >= 11 ? 'tai' : 'xiu';
+                    detail = `Tổng: ${sum} • ${result === 'tai' ? 'TÀI' : 'XỈU'} (theo tổng)`;
+                }
+                
+                // Hiển thị kết quả
+                resultValue.textContent = result.toUpperCase();
+                resultValue.className = `result-value ${result}`;
+                resultDetail.textContent = detail;
+                
+                // Thêm vào lịch sử
+                addToHistory(result, detail, sum);
+                
+                // Thông báo terminal
+                addTerminalLine(`Kết quả: ${result.toUpperCase()} • Tổng: ${sum} • Mẫu: ${key}`);
+                
+                // Reset cho lần tiếp theo
+                resetInput();
+            }, 500);
+        }
+
+        // Thêm vào terminal
+        function addTerminalLine(text, type = 'response') {
+            const line = document.createElement('div');
+            line.className = `terminal-line ${type}`;
+            line.textContent = `> ${text}`;
+            terminal.appendChild(line);
+            
+            // Giới hạn số dòng
+            while (terminal.children.length > 20) {
+                terminal.removeChild(terminal.firstChild);
+            }
+            
+            // Cuộn xuống
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Thêm vào lịch sử
+        function addToHistory(result, detail, sum) {
+            const item = {
+                id: Date.now(),
+                dice: [...dice],
+                result: result,
+                sum: sum,
+                time: new Date().toLocaleTimeString('vi-VN')
+            };
+            
+            history.unshift(item);
+            
+            // Giới hạn 10 mục
+            if (history.length > 10) {
+                history.pop();
+            }
+            
+            // Lưu
+            localStorage.setItem('sunwinHistory', JSON.stringify(history));
+            
+            // Cập nhật hiển thị
+            updateHistory();
+        }
+
+        // Cập nhật lịch sử
+        function updateHistory() {
+            if (history.length === 0) {
+                historyGrid.innerHTML = `
+                    <div class="history-item" style="grid-column: 1 / -1; text-align: center; color: #0a0;">
+                        Chưa có lịch sử
+                    </div>
+                `;
+                return;
+            }
+            
+            historyGrid.innerHTML = '';
+            
+            history.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <div class="history-dice">
+                        <span>${item.dice[0]}</span>
+                        <span>${item.dice[1]}</span>
+                        <span>${item.dice[2]}</span>
+                    </div>
+                    <div class="history-result ${item.result === 'tai' ? 'history-tai' : 'history-xiu'}">
+                        ${item.result.toUpperCase()}
+                    </div>
+                    <div style="color: #0a0; font-size: 0.8rem; text-align: center;">
+                        ${item.time}
+                    </div>
+        
